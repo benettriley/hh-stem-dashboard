@@ -1,11 +1,13 @@
 // Cloudflare Workers (static assets only, no Worker script) serving the STEM dashboard.
-// Build first, then deploy:
-//   node tools/build-brightsign.js
-//   npx wrangler deploy
+// `npx wrangler deploy` runs the build below first, so brightsign/ never needs to be
+// committed (Cloudflare's Git builds start from a clean clone).
 // Pages: https://hh-stem-dashboard.<your-subdomain>.workers.dev/stem-rooms.html (and stem-outside, stem-energy, stem-air)
 {
   "name": "hh-stem-dashboard",
   "compatibility_date": "2026-10-01",
+  "build": {
+    "command": "node tools/build-brightsign.js"
+  },
   "assets": {
     "directory": "./brightsign",
     // Serve stem-rooms.html at exactly that URL (no redirect to /stem-rooms).
