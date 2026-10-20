@@ -19,6 +19,10 @@ const CONFIG = {
   TRIGGER_MINUTES: 5,
   SEARCH_WINDOW: '3d',
   TIME_ZONE: 'America/Chicago',
+  // Only Ensemble's own, DKIM-signed mail is accepted; anything else is ignored
+  // (otherwise anyone who knows the mailbox could put fake numbers on the screens).
+  ALLOWED_SENDER: 'tes_admin@ensemblecloud.com',
+  DKIM_DOMAIN: 'ensemblecloud.com',
 };
 
 // ---------- setup ----------
@@ -37,7 +41,7 @@ function setup() {
 
 function processInbox() {
   const label = getLabel_();
-  const query = `subject:"${CONFIG.SUBJECT_PREFIX}" has:attachment -label:${CONFIG.PROCESSED_LABEL.replace('/', '-')} newer_than:${CONFIG.SEARCH_WINDOW}`;
+  const query = `from:${CONFIG.ALLOWED_SENDER} subject:"${CONFIG.SUBJECT_PREFIX}" has:attachment -label:${CONFIG.PROCESSED_LABEL.replace('/', '-')} newer_than:${CONFIG.SEARCH_WINDOW}`;
   const threads = GmailApp.search(query, 0, 50);
   if (!threads.length) {
     // Recover if a previous run stopped before the combined file was written.
@@ -49,6 +53,11 @@ function processInbox() {
   const messages = threads
     .flatMap(t => t.getMessages())
     .filter(m => m.getSubject().indexOf(CONFIG.SUBJECT_PREFIX) === 0)
+    .filter(m => {
+      const ok = isFromEnsemble(m.getFrom(), m.getHeader('Authentication-Results'));
+      if (!ok) console.warn(`Ignored "${m.getSubject()}" from ${m.getFrom()}: not authenticated Ensemble mail`);
+      return ok;
+    })
     .sort((a, b) => a.getDate() - b.getDate());
 
   messages.forEach(msg => {
@@ -65,6 +74,18 @@ function processInbox() {
 
   threads.forEach(t => t.addLabel(label));
   rebuildCombined_();
+}
+
+/**
+ * True only for mail from CONFIG.ALLOWED_SENDER that Gmail verified with a passing DKIM
+ * signature from CONFIG.DKIM_DOMAIN. The From line alone can be forged; the DKIM result
+ * in Gmail's own Authentication-Results header can't be without Ensemble's signing key.
+ */
+function isFromEnsemble(from, authResults) {
+  const addr = (String(from || '').match(/<([^>]+)>/) || [null, from])[1];
+  if (String(addr || '').trim().toLowerCase() !== CONFIG.ALLOWED_SENDER.toLowerCase()) return false;
+  const dkim = new RegExp(`dkim=pass[^;]*header\\.i=[^;\\s]*@${CONFIG.DKIM_DOMAIN.replace(/\./g, '\\.')}(\\s|;|$)`, 'i');
+  return dkim.test(String(authResults || ''));
 }
 
 // ---------- CSV parsing ----------
