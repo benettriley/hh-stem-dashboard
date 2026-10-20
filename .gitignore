@@ -1,0 +1,13 @@
+# Build output: regenerate with `node tools/build-brightsign.js`
+brightsign/
+
+# Tooling
+.wrangler/
+.claude/
+node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/

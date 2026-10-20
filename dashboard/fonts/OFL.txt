@@ -1,0 +1,9 @@
+Fonts in this folder
+
+inter-latin.woff2           Inter (https://github.com/rsms/inter), Copyright 2020 The Inter Project Authors
+source-serif-4-latin.woff2  Source Serif 4 (https://github.com/adobe-fonts/source-serif), Copyright 2014-2021 Adobe
+
+Both are licensed under the SIL Open Font License, Version 1.1:
+https://openfontlicense.org/open-font-license-official-text/
+
+Downloaded from Google Fonts (fonts.gstatic.com), Latin subset, on 2026-10-20.
